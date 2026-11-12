@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand HSL Colors */
+    --color-brand-amber: 40 100% 48%; /* #f59e0b school-bus amber */
+    --color-brand-amber-light: 45 100% 60%;
+    --color-brand-amber-dark: 35 100% 40%;
+    --color-brand-navy: 222 47% 11%;  /* #0f172a deep navy */
+
+    /* Status Colors */
+    --color-status-running: 142 71% 45%; /* #16a34a green */
+    --color-status-full: 38 92% 50%;    /* #f59e0b full amber */
+    --color-status-breakdown: 0 84% 60%; /* #ef4444 breakdown red */
+    --color-status-stale: 215 16% 47%;   /* #64748b stale grey */
+
+    /* Light Theme Surfaces */
+    --color-surface-light: 210 40% 98%;
+    --color-surface-card: 0 0% 100%;
+    --color-surface-dark: 222 47% 11%;
+    --color-surface-darkcard: 217 33% 17%;
+  }
+
+  .dark {
+    --color-surface-light: 222 47% 11%;
+    --color-surface-card: 217 33% 17%;
+  }
+
+  body {
+    @apply font-sans bg-slate-50 text-slate-900;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+/* Accessible utility ensuring dark text on amber buttons / badges ALWAYS */
+.btn-amber {
+  background-color: hsl(40 100% 48%);
+  color: #0f172a !important; /* Never white on amber! */
+  font-weight: 600;
+}
+.btn-amber:hover {
+  background-color: hsl(40 100% 44%);
+}
+
+.badge-amber {
+  background-color: hsl(40 100% 48% / 0.18);
+  color: #78350f !important;
+  border: 1px solid hsl(40 100% 48% / 0.4);
+}
+
+/* Gliding transition for top-down rotating bus icon */
+.bus-marker-icon {
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+  will-change: transform;
+}
