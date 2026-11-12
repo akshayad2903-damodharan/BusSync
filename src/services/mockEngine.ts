@@ -142,7 +142,7 @@ class MockEngine {
       };
     }
 
-    if (driver.pin_hash === enteredPin || driver.pin_hash === '1234') {
+    if (driver.pin_hash === enteredPin) {
       // Success
       driver.failed_pin_attempts = 0;
       driver.locked_until = null;
@@ -166,6 +166,7 @@ class MockEngine {
         this.notify();
         return {
           success: false,
+          locked: false,
           remainingAttempts: remaining,
           message: `Incorrect PIN. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
         };
