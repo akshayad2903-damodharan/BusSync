@@ -4,6 +4,8 @@ import { authService, AuthState } from './services/authService';
 import { mockEngine } from './services/mockEngine';
 import { LoginScreen } from './components/LoginScreen';
 
+import { DriverTripScreen } from './components/DriverTripScreen';
+
 export default function App() {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
   const isMockMode = import.meta.env.VITE_USE_MOCKS === 'true';
@@ -107,6 +109,11 @@ export default function App() {
       <main className="flex-1 flex flex-col justify-center items-center p-4">
         {!authState.isAuthenticated ? (
           <LoginScreen onLoginSuccess={() => {}} />
+        ) : authState.user?.role === 'driver' && authState.driver ? (
+          <DriverTripScreen
+            driver={authState.driver}
+            institutionId={authState.user.institution_id}
+          />
         ) : (
           <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-float p-6 sm:p-8 text-center space-y-6">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
