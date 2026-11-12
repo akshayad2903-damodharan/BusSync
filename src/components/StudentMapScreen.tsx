@@ -9,6 +9,8 @@ import { Bus, Phone, Compass, AlertCircle, RefreshCw, Layers, Clock, ShieldCheck
 import { ActiveBusTrackingData, UserProfile } from '../types';
 import { mockEngine } from '../services/mockEngine';
 import { LiveMap } from './LiveMap';
+import { StatusBadge } from './StatusBadge';
+import { RouteAlertBanner } from './RouteAlertBanner';
 
 interface StudentMapScreenProps {
   user: UserProfile;
@@ -119,6 +121,9 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
         )}
       </div>
 
+      {/* Route Disruption Alert Banner */}
+      <RouteAlertBanner routeId={selectedBus?.route_id || user.route_id || undefined} />
+
       {/* Main Map + Detail Split Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-[500px]">
         {/* Left Column (2 Cols): Live Leaflet Map Canvas */}
@@ -181,24 +186,11 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
 
                 {/* Status Badge */}
                 <div>
-                  {selectedBus.status === 'normal' && (
-                    <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                      Running
-                    </span>
-                  )}
-                  {selectedBus.status === 'full' && (
-                    <span className="px-3 py-1 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-600" />
-                      Bus Full
-                    </span>
-                  )}
-                  {selectedBus.status === 'breakdown' && (
-                    <span className="px-3 py-1 rounded-xl bg-red-100 text-red-800 text-xs font-bold border border-red-200 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-red-600" />
-                      Breakdown
-                    </span>
-                  )}
+                  <StatusBadge
+                    status={selectedBus.status}
+                    isStale={selectedBus.is_stale}
+                    staleSeconds={selectedBus.last_updated_seconds_ago}
+                  />
                 </div>
               </div>
 
