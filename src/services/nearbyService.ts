@@ -82,3 +82,4 @@ export const nearbyService = {
     throw new Error('Live Supabase nearby query not yet configured.');
   }
 };
+

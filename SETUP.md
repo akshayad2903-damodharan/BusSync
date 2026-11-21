@@ -101,3 +101,4 @@ Before deploying production builds to students, employees, or drivers, confirm:
 - [ ] Driver PINs are securely hashed in the `drivers` table (no plain text).
 - [ ] RLS policies are enabled on all tables in the Supabase Dashboard.
 - [ ] Lighthouse accessibility score is 90+ on main student map and driver screens.
+

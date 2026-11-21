@@ -54,3 +54,4 @@ describe('Feature 7: nearbyService & Public Institution Visibility', () => {
     expect(nearby.length).toBe(0);
   });
 });
+
