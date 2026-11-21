@@ -9,6 +9,7 @@ import { Bus, Phone, Compass, AlertCircle, RefreshCw, Layers, Clock, ShieldCheck
 import { ActiveBusTrackingData, UserProfile, Stop } from '../types';
 import { mockEngine } from '../services/mockEngine';
 import { etaService, ETAResult } from '../services/etaService';
+import { nearbyService } from '../services/nearbyService';
 import { LiveMap } from './LiveMap';
 import { StatusBadge } from './StatusBadge';
 import { RouteAlertBanner } from './RouteAlertBanner';
@@ -39,8 +40,23 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
   }, [stops, selectedStopId]);
 
   // Refresh active fleet buses
-  const refreshFleet = () => {
-    const active = mockEngine.getActiveBuses(institutionId, includeNearby);
+  const refreshFleet = async () => {
+    let active = mockEngine.getActiveBuses(institutionId, false);
+    if (includeNearby) {
+      const centerLat = active[0]?.latest_location?.lat || 12.9352;
+      const centerLng = active[0]?.latest_location?.lng || 77.6245;
+      try {
+        const nearby = await nearbyService.getNearbyInstitutionsBuses(
+          institutionId,
+          centerLat,
+          centerLng,
+          25
+        );
+        active = [...active, ...nearby];
+      } catch (err) {
+        // Ignore in mock/fallback
+      }
+    }
     setBuses(active);
 
     if (active.length > 0 && !selectedBusId) {
@@ -112,8 +128,26 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* My Stop Selection Pill */}
-        <div className="flex items-center gap-2">
+        {/* Action Controls: My Stop & Nearby Toggle */}
+        <div className="flex items-center flex-wrap gap-2">
+          {/* Nearby Institutions Toggle */}
+          <button
+            type="button"
+            onClick={() => setIncludeNearby(!includeNearby)}
+            className={`px-3 py-2 rounded-2xl border text-xs font-bold transition-all flex items-center gap-1.5 shadow-subtle active:scale-95 ${
+              includeNearby
+                ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-400/40'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${includeNearby ? 'bg-indigo-300' : 'bg-slate-400'}`} />
+            <span>Nearby Buses</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${includeNearby ? 'bg-indigo-800 text-white' : 'bg-slate-200 text-slate-600'}`}>
+              {includeNearby ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          {/* My Stop Selection Pill */}
           <button
             type="button"
             onClick={() => setShowStopModal(true)}
@@ -137,20 +171,29 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
                   onClick={() => setSelectedBusId(bus.bus_id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
                     isSelected
-                      ? 'btn-amber shadow-sm ring-2 ring-amber-400/40'
+                      ? bus.is_nearby
+                        ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/40'
+                        : 'btn-amber shadow-sm ring-2 ring-amber-400/40'
+                      : bus.is_nearby
+                      ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200'
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      bus.status === 'breakdown'
+                      bus.is_nearby
+                        ? 'bg-indigo-400'
+                        : bus.status === 'breakdown'
                         ? 'bg-red-500'
                         : bus.status === 'full'
                         ? 'bg-amber-600'
                         : 'bg-emerald-500'
                     }`}
                   />
-                  {bus.bus_number}
+                  <span>{bus.bus_number}</span>
+                  {bus.is_nearby && (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-black/10">Nearby</span>
+                  )}
                 </button>
               );
             })}
@@ -212,10 +255,21 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
               {/* Bus Header */}
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono">
-                    {selectedBus.route_code}
-                  </span>
-                  <h3 className="text-2xl font-extrabold font-heading text-slate-900 mt-1">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full font-mono ${
+                      selectedBus.is_nearby
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {selectedBus.is_nearby ? 'Nearby Fleet' : selectedBus.route_code}
+                    </span>
+                    {selectedBus.is_nearby && (
+                      <span className="text-[10px] font-semibold text-indigo-600">
+                        {selectedBus.institution_name}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-2xl font-extrabold font-heading text-slate-900">
                     {selectedBus.bus_number}
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">{selectedBus.route_name}</p>
@@ -231,7 +285,42 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
                 </div>
               </div>
 
-              {/* Dynamic ETA to My Stop Banner */}
+              {/* Nearby Bus Privacy Notice (No driver personal info) */}
+              {selectedBus.is_nearby ? (
+                <div className="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-2xl text-xs text-indigo-900 flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-indigo-950 mb-0.5">Public Area Transit Fleet</strong>
+                    <span>
+                      Live coordinates and route info shared by {selectedBus.institution_name}. Driver contact details are restricted to institution members.
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                /* Driver Details & Tap-to-Call (Own institution only) */
+                selectedBus.driver_name && (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                        Assigned Driver
+                      </div>
+                      <div className="text-sm font-bold text-slate-900">{selectedBus.driver_name}</div>
+                      <div className="text-xs text-slate-500 font-mono">{selectedBus.driver_phone}</div>
+                    </div>
+
+                    {selectedBus.driver_phone && (
+                      <a
+                        href={`tel:${selectedBus.driver_phone}`}
+                        className="w-10 h-10 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm transition-all active:scale-95"
+                        title="Tap to Call Driver"
+                        aria-label="Tap to Call Driver"
+                      >
+                        <Phone className="w-4 h-4 fill-current" />
+                      </a>
+                    )}
+                  </div>
+                )
+              )}
               {selectedStop && etaResult && (
                 <div className={`p-4 rounded-2xl border shadow-subtle ${
                   etaResult.hasPassed
