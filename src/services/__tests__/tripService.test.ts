@@ -115,3 +115,4 @@ describe('Feature 3: tripService & Location Buffering', () => {
     expect(checkTrip?.active).toBe(false);
   });
 });
+

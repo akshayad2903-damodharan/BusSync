@@ -175,3 +175,4 @@ export const DriverPinModal: React.FC<DriverPinModalProps> = ({
     </div>
   );
 };
+

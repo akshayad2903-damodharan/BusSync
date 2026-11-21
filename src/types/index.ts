@@ -125,3 +125,4 @@ export interface OfflineLocationBuffer {
   point: LocationPoint;
   queued_at: number;
 }
+

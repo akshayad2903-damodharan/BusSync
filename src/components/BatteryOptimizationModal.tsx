@@ -83,3 +83,4 @@ export const BatteryOptimizationModal: React.FC<BatteryOptimizationModalProps> =
     </div>
   );
 };
+

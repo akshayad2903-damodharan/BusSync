@@ -260,3 +260,4 @@ flowchart LR
 - [x] With `VITE_USE_MOCKS=true` and `VITE_DEV_MODE=true`, entire app runs out-of-the-box with dev quick login.
 - [x] Production build strips all dev panels, bypass codes, and dummy accounts.
 - [x] WCAG AA contrast compliance and Lighthouse 90+ accessibility.
+

@@ -96,3 +96,4 @@ export const tripService = {
     return this.endTrip(tripId);
   }
 };
+

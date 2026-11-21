@@ -143,3 +143,4 @@ export function createStopIcon(stopOrder: number, isSelected: boolean = false): 
     iconAnchor: [12, 12]
   });
 }
+

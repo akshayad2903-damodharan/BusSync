@@ -481,3 +481,4 @@ export const DriverTripScreen: React.FC<DriverTripScreenProps> = ({ driver, inst
     </div>
   );
 };
+

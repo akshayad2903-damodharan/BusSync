@@ -59,3 +59,4 @@ INSERT INTO roster (institution_id, email, name, role, route_code, stop_name) VA
 ('22222222-2222-2222-2222-222222222222', 'employee@zenithcorp.com', 'Amit Patel', 'employee', 'R-202', 'Domlur Flyover'),
 ('22222222-2222-2222-2222-222222222222', 'neha.s@zenithcorp.com', 'Neha Singh', 'employee', 'R-202', 'Embassy GolfLinks')
 ON CONFLICT DO NOTHING;
+

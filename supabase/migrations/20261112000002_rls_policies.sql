@@ -153,3 +153,4 @@ CREATE POLICY "Roster admin manage" ON roster
 FOR ALL USING (
     institution_id = get_current_user_institution() AND get_current_user_role() = 'admin'
 );
+

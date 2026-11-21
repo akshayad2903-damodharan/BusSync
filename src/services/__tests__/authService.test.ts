@@ -81,3 +81,4 @@ describe('Feature 2: authService & Roster Verification', () => {
     expect(adminProfile.role).toBe('admin');
   });
 });
+

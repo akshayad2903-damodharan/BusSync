@@ -6,11 +6,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bus, Phone, Compass, AlertCircle, RefreshCw, Layers, Clock, ShieldCheck, MapPin } from 'lucide-react';
-import { ActiveBusTrackingData, UserProfile } from '../types';
+import { ActiveBusTrackingData, UserProfile, Stop } from '../types';
 import { mockEngine } from '../services/mockEngine';
+import { etaService, ETAResult } from '../services/etaService';
 import { LiveMap } from './LiveMap';
 import { StatusBadge } from './StatusBadge';
 import { RouteAlertBanner } from './RouteAlertBanner';
+import { StopSelectionModal } from './StopSelectionModal';
+import { RouteProgressTimeline } from './RouteProgressTimeline';
 
 interface StudentMapScreenProps {
   user: UserProfile;
@@ -20,11 +23,20 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
   const [buses, setBuses] = useState<ActiveBusTrackingData[]>([]);
   const [selectedBusId, setSelectedBusId] = useState<string | null>(null);
   const [includeNearby, setIncludeNearby] = useState<boolean>(false);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(user.stop_id || null);
+  const [showStopModal, setShowStopModal] = useState<boolean>(false);
 
   const institutionId = user.institution_id;
   const institution = mockEngine.institutions.find((i) => i.id === institutionId);
   const routes = mockEngine.routes.filter((r) => r.institution_id === institutionId);
   const stops = mockEngine.stops.filter((s) => routes.some((r) => r.id === s.route_id));
+
+  // Default stop if not selected yet
+  useEffect(() => {
+    if (!selectedStopId && stops.length > 0) {
+      setSelectedStopId(stops[0].id);
+    }
+  }, [stops, selectedStopId]);
 
   // Refresh active fleet buses
   const refreshFleet = () => {
@@ -59,6 +71,18 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
 
   // Selected bus detail
   const selectedBus = buses.find((b) => b.bus_id === selectedBusId) || buses[0] || null;
+  const selectedStop = stops.find((s) => s.id === selectedStopId) || null;
+  const busRouteStops = stops.filter((s) => s.route_id === selectedBus?.route_id);
+
+  // Compute dynamic ETA to user's stop
+  let etaResult: ETAResult | null = null;
+  if (selectedBus?.latest_location && selectedStop && busRouteStops.length > 0) {
+    etaResult = etaService.calculateETA(
+      selectedBus.latest_location,
+      selectedStop,
+      busRouteStops
+    );
+  }
 
   // Helper for dev testing: launch a demo trip if none running
   const startDemoTrip = () => {
@@ -86,6 +110,19 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
               {institution?.name} • {routes.length} Active Route(s)
             </p>
           </div>
+        </div>
+
+        {/* My Stop Selection Pill */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowStopModal(true)}
+            className="px-3.5 py-2 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2 transition-all active:scale-95 shadow-subtle"
+          >
+            <MapPin className="w-3.5 h-3.5 text-amber-500" />
+            <span>Stop: <strong className="text-slate-900">{selectedStop?.name || 'Choose My Stop'}</strong></span>
+            <span className="text-[10px] text-amber-600 font-semibold underline">Change</span>
+          </button>
         </div>
 
         {/* Running Buses Selector Chips */}
@@ -194,6 +231,37 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
                 </div>
               </div>
 
+              {/* Dynamic ETA to My Stop Banner */}
+              {selectedStop && etaResult && (
+                <div className={`p-4 rounded-2xl border shadow-subtle ${
+                  etaResult.hasPassed
+                    ? 'bg-slate-50 border-slate-200 text-slate-700'
+                    : etaResult.minutes <= 5
+                    ? 'bg-amber-400 text-slate-950 border-amber-500 ring-2 ring-amber-300'
+                    : 'bg-amber-50/80 border-amber-200 text-amber-950'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                        Estimated Arrival at {selectedStop.name}
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black font-heading tracking-tight mt-0.5">
+                        {etaResult.etaFormatted}
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-black/10">
+                      {etaResult.distanceKm} km away
+                    </span>
+                  </div>
+
+                  {!etaResult.hasPassed && (
+                    <div className="text-xs font-medium opacity-90 mt-1 flex items-center gap-1.5">
+                      <span>• {etaResult.stopsRemaining === 0 ? 'Approaching this stop now' : `${etaResult.stopsRemaining} stop(s) remaining`}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Driver Details & Tap-to-Call */}
               {selectedBus.driver_name && (
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
@@ -251,6 +319,16 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
                     : `${selectedBus.last_updated_seconds_ago}s ago`}
                 </span>
               </div>
+              {/* Route Progress Timeline */}
+              {busRouteStops.length > 0 && (
+                <div className="pt-2 border-t border-slate-100">
+                  <RouteProgressTimeline
+                    stops={busRouteStops}
+                    busLocation={selectedBus.latest_location}
+                    selectedStopId={selectedStopId}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-white border border-slate-200 rounded-3xl p-6 text-center text-slate-500 text-xs">
@@ -259,6 +337,20 @@ export const StudentMapScreen: React.FC<StudentMapScreenProps> = ({ user }) => {
           )}
         </div>
       </div>
+
+      {/* Stop Selection Modal */}
+      {showStopModal && (
+        <StopSelectionModal
+          routes={routes}
+          stops={stops}
+          selectedRouteId={selectedBus?.route_id || routes[0]?.id || null}
+          selectedStopId={selectedStopId}
+          onSelect={(routeId, stopId) => {
+            setSelectedStopId(stopId);
+          }}
+          onClose={() => setShowStopModal(false)}
+        />
+      )}
     </div>
   );
 };
