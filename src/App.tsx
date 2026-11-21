@@ -6,6 +6,7 @@ import { LoginScreen } from './components/LoginScreen';
 
 import { DriverTripScreen } from './components/DriverTripScreen';
 import { StudentMapScreen } from './components/StudentMapScreen';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export default function App() {
   const isDevMode = import.meta.env.VITE_DEV_MODE === 'true';
@@ -117,6 +118,8 @@ export default function App() {
           />
         ) : authState.user && (authState.user.role === 'student' || authState.user.role === 'employee') ? (
           <StudentMapScreen user={authState.user} />
+        ) : authState.user && authState.user.role === 'admin' ? (
+          <AdminDashboard user={authState.user} />
         ) : (
           <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl shadow-float p-6 sm:p-8 text-center space-y-6">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
